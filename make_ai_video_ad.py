@@ -155,15 +155,15 @@ def main():
     for index, scene in enumerate(plan["scenes"]):
         print(f"Generating moving video scene {index + 1}/{len(plan['scenes'])}...")
         video_path = output / f"ai_scene_{index:02}.mp4"
-        generate_video(runway, scene["visual_prompt"], video_path)
         voice_path = output / f"voice_scene_{index:02}.mp3"
         asyncio.run(make_voice(scene["narration"], voice_path, args.voice))
         voice_duration = probe_duration(voice_path)
         if voice_duration > 5.0:
             raise RuntimeError(
                 f"Scene {index + 1} voice-over is {voice_duration:.1f}s, longer than its 5s video. "
-                "Please rerun; the script should keep each spoken line short."
+                "The narration was too long; shorten the scene line and run again before paying for video generation."
             )
+        generate_video(runway, scene["visual_prompt"], video_path)
         video_files.append(video_path)
         voice_files.append(voice_path)
         voice_durations.append(voice_duration)
