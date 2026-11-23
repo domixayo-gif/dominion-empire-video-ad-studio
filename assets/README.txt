@@ -1,0 +1,1 @@
+Put your own licensed product/lifestyle video clips in this folder. Supported: MP4, MOV, M4V, WEBM. The workflow needs at least one clip. Use 1–5 clips; they will be cropped to vertical 9:16 and muted under the AI narration. Do not upload copyrighted footage unless you have permission.
