@@ -19,7 +19,7 @@ from pathlib import Path
 from openai import OpenAI
 
 VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".webm"}
-MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 
 
 def run(cmd):
