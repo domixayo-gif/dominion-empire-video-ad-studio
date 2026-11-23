@@ -1,46 +1,50 @@
-# Dominion Empire — UGC Video Ad Studio
+# Dominion Empire — AI Scene-by-Scene Video Ad Studio
 
-Create vertical UGC-style MP4 ads with an AI voice-over using GitHub Actions.
+Create vertical MP4 product ads from your own footage. OpenAI vision analyses timestamped frames sampled throughout every uploaded clip, writes a scene plan, and matches each narration segment to a relevant source range. Edge TTS generates the voice-over and FFmpeg renders the finished video.
 
 ## What it does
-- Takes your own product/lifestyle video clips from `assets/`
-- Writes a short ad script from the product details you enter
-- Generates an AI voice-over with Microsoft Edge TTS
-- Crops/combines footage into a 9:16 video, adds readable captions and exports an MP4
-- Uploads the finished MP4 as a downloadable GitHub Actions artifact
+- Samples frames across all source clips and sends them to an OpenAI vision model for analysis
+- Builds a scene-by-scene script and storyboard using the product facts you provide
+- Generates a separate voice-over segment for each scene
+- Uses the selected source clip and timestamp for each matching scene
+- Adds scene-specific on-screen text and renders a vertical 9:16 MP4
+- Uploads the MP4, script, and storyboard as a downloadable GitHub Actions artifact
 
-**Important:** This first version edits footage you provide. It does not generate a synthetic human/avatar or fetch stock footage automatically. Use footage you own or have permission to use, and make truthful product claims.
+**Important:** The model analyses timestamped still frames, not the original video as a continuous video input. It can miss fast actions or details between sampled frames. Review the storyboard and final video before publishing. It must not invent product claims, results, testimonials, ingredients, or offers.
 
-## 1. Add your footage
-Upload 1–5 vertical or horizontal product/demo/lifestyle clips into `assets/` (MP4, MOV, or WEBM). Keep each clip reasonably short (5–30 seconds). Example:
-```
-assets/
-  clip1.mp4
-  clip2.mp4
-``
+## 1. Add your API key
+In this repository, open **Settings → Secrets and variables → Actions → New repository secret**.
+- Name: `OPENAI_API_KEY`
+- Secret: your OpenAI API key
 
-## 2. Generate an ad
+Never put the key in source code, commit it, or share it in an issue. The workflow reads it securely from GitHub Actions Secrets.
+
+## 2. Add your footage
+Upload 1–5 clips to `assets/` (MP4, MOV, M4V, or WEBM). Use footage you own or have permission to use. Keep clips reasonably short and clear.
+
+**Repository visibility:** This repository is public. Files committed to `assets/` can be viewed by anyone. Do not upload private customer footage, confidential brand material, or personal videos unless you first make the repository private.
+
+## 3. Generate an ad
 1. Open the **Actions** tab.
 2. Select **Create UGC Video Ad**.
 3. Click **Run workflow**.
-4. Enter product name, target audience, problem, benefit, offer (optional), and call to action.
-5. Choose a voice and duration, then run it.
+4. Enter the product, target audience, problem, truthful benefit, offer, and CTA.
+5. Choose a voice and target length, then run it.
 
-When complete, open the successful workflow run and download **dominion-empire-video-ad** under Artifacts. Extract the ZIP to get your MP4.
+When complete, open the workflow run and download **dominion-empire-video-ad** under Artifacts. Extract the ZIP to get the MP4, script, and storyboard.
 
-## Voice options
-The workflow uses Edge TTS neural voices (internet access required). Default: Nigerian English is not guaranteed; select an English voice from the workflow list.
+## Costs
+Each run uses OpenAI API tokens for the sampled images and generated scene plan. API usage is billed separately from a ChatGPT subscription. The workflow uses `gpt-5-mini` by default. Check the OpenAI API pricing page and usage dashboard before running repeated tests.
 
-## Local run (optional)
-Requires Python 3.11, FFmpeg, and internet access:
+## Local run
+Requires Python 3.11, FFmpeg, and internet access. Set `OPENAI_API_KEY` in your environment, install requirements, and run:
 ```bash
 pip install -r requirements.txt
-python make_ad.py --product "Vitamin C Serum" --audience "women who want a brighter-looking skincare routine" --problem "dull-looking skin" --benefit "a simple serum step for your routine" --cta "Learn more"
+python make_ad.py --product "Vitamin C Serum" --audience "women interested in skincare" --problem "dull-looking skin" --benefit "a simple serum step for a skincare routine" --cta "Learn more"
 ```
 
-Place clips in `assets/`. Output is written to `output/dominion-empire-ugc-ad.mp4`.
-
 ## Notes
-- AI voice is generated speech, not a real customer testimonial. Do not present scripted copy as a genuine customer review.
-- Add product footage, packaging, demonstrations, and real licensed UGC. Avoid unsupported before/after or medical claims.
-- GitHub Actions artifacts are temporary (retention is set to 7 days); download your MP4 after the run.
+- AI voice is generated speech, not a real customer testimonial.
+- Do not present scripted copy as a genuine customer review.
+- Review all claims and footage before publishing.
+- GitHub Actions artifacts are temporary (7-day retention); download your MP4 after the run.

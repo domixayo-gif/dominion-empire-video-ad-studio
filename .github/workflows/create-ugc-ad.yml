@@ -55,7 +55,7 @@ permissions:
 jobs:
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Check out project
         uses: actions/checkout@v4
@@ -70,7 +70,7 @@ jobs:
           sudo apt-get install -y ffmpeg
       - name: Install Python dependencies
         run: pip install -r requirements.txt
-      - name: Render UGC ad
+      - name: Analyse footage and render scene-matched ad
         run: |
           python make_ad.py \
             --product "$PRODUCT" \
@@ -82,6 +82,8 @@ jobs:
             --voice "$VOICE" \
             --seconds "$AD_SECONDS"
         env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-5.4-mini
           PRODUCT: ${{ inputs.product }}
           AUDIENCE: ${{ inputs.audience }}
           PROBLEM: ${{ inputs.problem }}
@@ -90,12 +92,13 @@ jobs:
           CTA: ${{ inputs.cta }}
           VOICE: ${{ inputs.voice }}
           AD_SECONDS: ${{ inputs.seconds }}
-      - name: Upload finished MP4 and script
+      - name: Upload finished MP4, script and storyboard
         uses: actions/upload-artifact@v4
         with:
           name: dominion-empire-video-ad
           path: |
             output/dominion-empire-ugc-ad.mp4
             output/ad-script.txt
+            output/ad-storyboard.json
           if-no-files-found: error
           retention-days: 7
