@@ -107,6 +107,7 @@ def generate_video(client, prompt, output_path):
             prompt_text=prompt + " Natural realistic motion, coherent anatomy, commercial cinematography.",
             ratio="720:1280",
             duration=5,
+            audio=False,
         ).wait_for_task_output()
     except TaskFailedError as exc:
         raise RuntimeError(f"Runway video generation failed: {exc.task_details}") from exc
@@ -150,24 +151,27 @@ def main():
     plan = create_scene_plan(args)
     (output / "ad-storyboard.json").write_text(json.dumps(plan, indent=2), encoding="utf-8")
 
-    runway = RunwayML()
+    # Generate and validate ALL narration before making any billable video requests.
     video_files, voice_files, voice_durations, used_scenes = [], [], [], []
     for index, scene in enumerate(plan["scenes"]):
-        print(f"Generating moving video scene {index + 1}/{len(plan['scenes'])}...")
-        video_path = output / f"ai_scene_{index:02}.mp4"
         voice_path = output / f"voice_scene_{index:02}.mp3"
         asyncio.run(make_voice(scene["narration"], voice_path, args.voice))
         voice_duration = probe_duration(voice_path)
         if voice_duration > 5.0:
             raise RuntimeError(
                 f"Scene {index + 1} voice-over is {voice_duration:.1f}s, longer than its 5s video. "
-                "The narration was too long; shorten the scene line and run again before paying for video generation."
+                "The narration was too long; shorten the scene line and run again. No video generation has started."
             )
-        generate_video(runway, scene["visual_prompt"], video_path)
-        video_files.append(video_path)
         voice_files.append(voice_path)
         voice_durations.append(voice_duration)
         used_scenes.append(scene)
+
+    runway = RunwayML()
+    for index, scene in enumerate(used_scenes):
+        print(f"Generating moving video scene {index + 1}/{len(used_scenes)}...")
+        video_path = output / f"ai_scene_{index:02}.mp4"
+        generate_video(runway, scene["visual_prompt"], video_path)
+        video_files.append(video_path)
 
     segments = []
     for index, (video_path, voice_duration) in enumerate(zip(video_files, voice_durations)):
