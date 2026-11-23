@@ -1,0 +1,101 @@
+name: Create UGC Video Ad
+
+on:
+  workflow_dispatch:
+    inputs:
+      product:
+        description: Product name
+        required: true
+        type: string
+      audience:
+        description: Who is this for?
+        required: true
+        type: string
+      problem:
+        description: Problem the audience has (avoid medical claims)
+        required: true
+        type: string
+      benefit:
+        description: Truthful product benefit
+        required: true
+        type: string
+      offer:
+        description: Optional offer or price
+        required: false
+        type: string
+      cta:
+        description: Call to action
+        required: true
+        default: tap the link to learn more
+        type: string
+      voice:
+        description: AI voice
+        required: true
+        default: en-US-JennyNeural
+        type: choice
+        options:
+          - en-US-JennyNeural
+          - en-US-AriaNeural
+          - en-GB-SoniaNeural
+          - en-NG-EzinneNeural
+          - en-NG-AbeoNeural
+      seconds:
+        description: Approximate ad length
+        required: true
+        default: "25"
+        type: choice
+        options:
+          - "15"
+          - "25"
+          - "35"
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+      - name: Render UGC ad
+        run: |
+          python make_ad.py \
+            --product "$PRODUCT" \
+            --audience "$AUDIENCE" \
+            --problem "$PROBLEM" \
+            --benefit "$BENEFIT" \
+            --offer "$OFFER" \
+            --cta "$CTA" \
+            --voice "$VOICE" \
+            --seconds "$SECONDS"
+        env:
+          PRODUCT: ${{ inputs.product }}
+          AUDIENCE: ${{ inputs.audience }}
+          PROBLEM: ${{ inputs.problem }}
+          BENEFIT: ${{ inputs.benefit }}
+          OFFER: ${{ inputs.offer }}
+          CTA: ${{ inputs.cta }}
+          VOICE: ${{ inputs.voice }}
+          SECONDS: ${{ inputs.seconds }}
+      - name: Upload finished MP4 and script
+        uses: actions/upload-artifact@v4
+        with:
+          name: dominion-empire-video-ad
+          path: |
+            output/dominion-empire-ugc-ad.mp4
+            output/ad-script.txt
+          if-no-files-found: error
+          retention-days: 7
