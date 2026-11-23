@@ -80,7 +80,7 @@ jobs:
             --offer "$OFFER" \
             --cta "$CTA" \
             --voice "$VOICE" \
-            --seconds "$SECONDS"
+            --seconds "$AD_SECONDS"
         env:
           PRODUCT: ${{ inputs.product }}
           AUDIENCE: ${{ inputs.audience }}
@@ -89,7 +89,7 @@ jobs:
           OFFER: ${{ inputs.offer }}
           CTA: ${{ inputs.cta }}
           VOICE: ${{ inputs.voice }}
-          SECONDS: ${{ inputs.seconds }}
+          AD_SECONDS: ${{ inputs.seconds }}
       - name: Upload finished MP4 and script
         uses: actions/upload-artifact@v4
         with:
