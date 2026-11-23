@@ -83,7 +83,7 @@ jobs:
             --seconds "$AD_SECONDS"
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: gpt-5-mini
+          OPENAI_MODEL: gpt-5.4-mini
           PRODUCT: ${{ inputs.product }}
           AUDIENCE: ${{ inputs.audience }}
           PROBLEM: ${{ inputs.problem }}
