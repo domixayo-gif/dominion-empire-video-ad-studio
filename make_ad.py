@@ -87,7 +87,7 @@ def build_fallback_plan(clips, samples, durations, args, reason):
     if args.offer:
         lines.append((f"Here's the offer: {args.offer}.", args.offer[:70]))
     lines.append((f"{args.cta}.", "Find out more"))
-    count = min(len(lines), max(1, len(samples)))
+    count = len(lines)
     selected = []
     for i in range(count):
         sample_index = round(i * (len(samples) - 1) / max(1, count - 1))
