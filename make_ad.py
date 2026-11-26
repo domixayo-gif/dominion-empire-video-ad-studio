@@ -81,7 +81,7 @@ def build_fallback_plan(clips, samples, durations, args, reason):
     lines = [
         (f"Meet {args.product}.", f"Meet {args.product}"),
         (f"If you're dealing with {args.problem}, take a look at this.", "A solution to consider"),
-        (f"{args.product} is designed to {args.benefit}.", "Product benefit"),
+        (f"{args.product}: {args.benefit}.", "Product benefit"),
         ("Make it part of your routine and discover whether it works for you.", "Easy to add to your routine"),
     ]
     if args.offer:
