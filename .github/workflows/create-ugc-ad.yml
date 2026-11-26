@@ -6,10 +6,9 @@ on:
       mode:
         description: Choose AI-generated moving scenes or edit your own uploaded footage
         required: true
-        default: ai_generated
+        default: uploaded_footage
         type: choice
         options:
-          - ai_generated
           - uploaded_footage
       product:
         description: Product name
@@ -78,32 +77,6 @@ jobs:
           sudo apt-get install -y ffmpeg
       - name: Install Python dependencies
         run: pip install -r requirements.txt
-
-      - name: Generate real moving AI video scenes
-        if: inputs.mode == 'ai_generated'
-        run: |
-          python make_ai_video_ad.py \
-            --product "$PRODUCT" \
-            --audience "$AUDIENCE" \
-            --problem "$PROBLEM" \
-            --benefit "$BENEFIT" \
-            --offer "$OFFER" \
-            --cta "$CTA" \
-            --voice "$VOICE" \
-            --seconds "$AD_SECONDS"
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: gpt-5.4-mini
-          RUNWAYML_API_SECRET: ${{ secrets.RUNWAYML_API_SECRET }}
-          RUNWAY_VIDEO_MODEL: seedance2_5
-          PRODUCT: ${{ inputs.product }}
-          AUDIENCE: ${{ inputs.audience }}
-          PROBLEM: ${{ inputs.problem }}
-          BENEFIT: ${{ inputs.benefit }}
-          OFFER: ${{ inputs.offer }}
-          CTA: ${{ inputs.cta }}
-          VOICE: ${{ inputs.voice }}
-          AD_SECONDS: ${{ inputs.seconds }}
 
       - name: Analyse uploaded footage and render scene-matched ad
         if: inputs.mode == 'uploaded_footage'
