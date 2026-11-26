@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 
 VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".webm"}
 MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
@@ -61,7 +61,7 @@ def sample_frames(clips, work_dir, max_frames=30):
         for frame_index, timestamp in enumerate(times):
             frame = work_dir / f"frame_c{clip_index:02}_f{frame_index:02}.jpg"
             run(["ffmpeg", "-y", "-ss", f"{timestamp:.3f}", "-i", str(clip),
-                 "-frames:v", "1", "-vf", "scale=640:-2", "-q:v", "5", str(frame)])
+                 "-frames:v", "1", "-vf", "scale=640:-2", "-q:v", "5", "-update", "1", str(frame)])
             if frame.exists() and frame.stat().st_size:
                 samples.append({
                     "clip_index": clip_index,
@@ -74,9 +74,45 @@ def sample_frames(clips, work_dir, max_frames=30):
     return samples, durations
 
 
+def build_fallback_plan(clips, samples, durations, args, reason):
+    """Build a prompt-led edit plan without paid vision/API analysis."""
+    print(f"WARNING: {reason}")
+    print("Using the no-API fallback: supplied product details + uploaded footage + Edge TTS.")
+    lines = [
+        (f"Meet {args.product}.", f"Meet {args.product}"),
+        (f"If you're dealing with {args.problem}, take a look at this.", "A solution to consider"),
+        (f"{args.product} is designed to {args.benefit}.", "Product benefit"),
+        ("Make it part of your routine and discover whether it works for you.", "Easy to add to your routine"),
+    ]
+    if args.offer:
+        lines.append((f"Here's the offer: {args.offer}.", args.offer[:70]))
+    lines.append((f"{args.cta}.", "Find out more"))
+    count = min(len(lines), max(1, len(samples)))
+    selected = []
+    for i in range(count):
+        sample_index = round(i * (len(samples) - 1) / max(1, count - 1))
+        sample = samples[sample_index]
+        ci = sample["clip_index"]
+        start = float(sample["timestamp"])
+        end = min(float(durations[ci]), start + 4.0)
+        if end <= start:
+            start = max(0.0, float(durations[ci]) - 0.5)
+            end = float(durations[ci])
+        narration, overlay = lines[i]
+        selected.append({
+            "clip_index": ci,
+            "start_sec": round(start, 2),
+            "end_sec": round(end, 2),
+            "narration": clean(narration),
+            "on_screen_text": clean(overlay)[:90],
+            "visual_reason": "Prompt-led fallback; review that this source shot suits the narration.",
+        })
+    return {"model": "prompt-led-fallback-no-openai-api", "scenes": selected}
+
+
 def analyse_and_plan(clips, samples, durations, args):
     if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is missing. Add it in GitHub Settings > Secrets and variables > Actions.")
+        return build_fallback_plan(clips, samples, durations, args, "OPENAI_API_KEY is not configured.")
     client = OpenAI()
     content = [{
         "type": "input_text",
@@ -116,12 +152,18 @@ def analyse_and_plan(clips, samples, durations, args):
             "image_url": f"data:image/jpeg;base64,{encoded}",
             "detail": "low",
         })
-    response = client.responses.create(
-        model=MODEL,
-        input=[{"role": "user", "content": content}],
-        text={"format": {"type": "json_object"}},
-        max_output_tokens=3000,
-    )
+    try:
+        response = client.responses.create(
+            model=MODEL,
+            input=[{"role": "user", "content": content}],
+            text={"format": {"type": "json_object"}},
+            max_output_tokens=3000,
+        )
+    except RateLimitError as exc:
+        message = str(exc)
+        if "credit_balance_exhausted" in message or "insufficient_quota" in message or "quota" in message.lower():
+            return build_fallback_plan(clips, samples, durations, args, "OpenAI API credits are exhausted; AI scene analysis was skipped.")
+        raise
     try:
         plan = json.loads(response.output_text)
     except Exception as exc:
@@ -189,9 +231,6 @@ def main():
         sys.exit("No video clips found. Upload at least one clip to assets/.")
     if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
         sys.exit("FFmpeg and ffprobe are required.")
-    if not os.getenv("OPENAI_API_KEY"):
-        sys.exit("OPENAI_API_KEY is missing from GitHub Actions secrets.")
-
     print(f"Sampling frames from {len(clips)} source clip(s)...")
     samples, durations = sample_frames(clips, work_dir)
     print(f"Sending {len(samples)} timestamped frames to {MODEL} for scene analysis...")
