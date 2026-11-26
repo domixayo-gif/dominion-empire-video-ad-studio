@@ -77,6 +77,8 @@ jobs:
           sudo apt-get install -y ffmpeg
       - name: Install Python dependencies
         run: pip install -r requirements.txt
+      - name: Check Python syntax
+        run: python -m py_compile make_ad.py
 
       - name: Analyse uploaded footage and render scene-matched ad
         if: inputs.mode == 'uploaded_footage'
@@ -107,7 +109,6 @@ jobs:
         with:
           name: dominion-empire-video-ad
           path: |
-            output/dominion-empire-ai-video-ad.mp4
             output/dominion-empire-ugc-ad.mp4
             output/ad-script.txt
             output/ad-storyboard.json
